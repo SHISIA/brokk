@@ -44,15 +44,15 @@ public class FileComparison extends SwingWorker<String, Object> {
     public String doInBackground() {
         try {
             if (diffNode == null) {
-                if (leftFile.getName().isEmpty() || !leftFile.exists()) {
-                    leftFile = new File(leftFile.getName());
-                }
+                if (mainPanel.isFileComparison() && rightFile != null && leftFile != null) {
+                    if (leftFile.getName().isEmpty() || !leftFile.exists()) {
+                        leftFile = new File(leftFile.getName());
+                    }
 
-                if (rightFile.getName().isEmpty() || !rightFile.exists()) {
-                    rightFile = new File(rightFile.getName());
-                }
-
-                if (mainPanel.isFileComparison()){
+                    if (rightFile.getName().isEmpty() || !rightFile.exists()) {
+                        rightFile = new File(rightFile.getName());
+                    }
+                    
                     diffNode = create(leftFile.getName(), leftFile,
                             rightFile.getName(), rightFile);
                 }else {

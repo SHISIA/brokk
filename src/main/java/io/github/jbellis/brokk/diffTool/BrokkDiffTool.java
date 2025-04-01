@@ -19,13 +19,13 @@ public class BrokkDiffTool
         JMHighlightPainter.initializePainters();
         JFrame frame = new JFrame("BrokkDiffTool");
         // Creating a new BrokkDiffPanel instance for file comparison mode.
-// The panel will compare two files: "java.txt" and "world.txt" from the desktop.
+        // The panel will compare two files: "java.txt" and "world.txt" from the desktop.
         BrokkDiffPanel brokkPanel = new BrokkDiffPanel(
                 true,  // Enable file comparison mode
                 "", "", // Titles for the left and right content (empty in this case)
                 "", "", // Content for direct text comparison (not used here)
-                new File("C:\\Users\\Administrator\\Desktop\\java.txt"),  // Left sample file to compare
-                new File("C:\\Users\\Administrator\\Desktop\\world.txt")   // Right sample file to compare
+                new File("LICENSE.txt"),  // Left sample file to compare
+                new File("NOTICE.txt")   // Right sample file to compare
         );
         frame.add(brokkPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

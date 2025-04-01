@@ -64,13 +64,7 @@ public class BufferDiffPanel extends AbstractContentPanel {
     public BrokkDiffPanel getMainPanel() {
         return mainPanel;
     }
-
-
-
-    public int getFilePanelSelectedIndex() {
-        return filePanelSelectedIndex;
-    }
-
+    
     public BufferDiffPanel(BrokkDiffPanel mainPanel) {
         this.mainPanel = mainPanel;
         diff = new JMDiff();

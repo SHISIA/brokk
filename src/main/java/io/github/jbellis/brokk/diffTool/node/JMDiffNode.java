@@ -41,12 +41,7 @@ public class JMDiffNode
     children = new ArrayList<>();
     calculateNames();
   }
-
-  public String getId()
-  {
-    return id;
-  }
-
+  
   private void initId()
   {
     id = (nodeLeft != null ? nodeLeft.getName() : "x")

@@ -440,7 +440,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                 }
                 Polygon shape;
                 // Draw merge left->right command.
-                if (bdTo.isReadonly()) {
+                if (bdTo.isReadonly() && diffPanel.getMainPanel().isFileComparison()) {
                     if (!shift || original.getSize() > 0) {
 
                         shape = createTriangle(x1, y1,delta.isHovered() ? 2 : 1); // Scale 2x on hover

@@ -15,16 +15,21 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
     private final JLabel loadingLabel = new JLabel("Processing... Please wait.");
     private final String contentLeft;
     private final String contentRight;
-    private final boolean isFileComparison;
+    private boolean isFileComparison;
     private final File leftFile;
     private final File rightFile;
     private final String contentLeftTitle;
     private final String contentRightTitle;
     private FileComparison fileComparison;
-
+    
     public boolean isFileComparison() {
         return isFileComparison;
     }
+
+    public void setIsFileComparison(boolean isFileComparison) {
+        this.isFileComparison = isFileComparison;
+    }
+
 
     /**
      * Constructor for BrokkDiffPanel, a panel designed to compare either text content or files.
@@ -47,11 +52,10 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         this.contentRight = contentRight;
         this.leftFile = leftFile;
         this.rightFile = rightFile;
-        this.isFileComparison = isFileComparison;
+        setIsFileComparison(isFileComparison && leftFile!=null && rightFile!=null);
         // Make the container focusable, so it can handle key events
         setFocusable(true);
         tabbedPane = new JTabbedPane();
-
         // Add an AncestorListener to trigger 'start()' when the panel is added to a container
         addAncestorListener(new AncestorListener() {
             public void ancestorAdded(AncestorEvent event) {
