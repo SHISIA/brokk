@@ -1,6 +1,7 @@
 
 package io.github.jbellis.brokk.diffTool.diff;
 
+
 import io.github.jbellis.brokk.diffTool.rangedifferencer.IRangeComparator;
 import io.github.jbellis.brokk.diffTool.rangedifferencer.RangeDifference;
 import io.github.jbellis.brokk.diffTool.rangedifferencer.RangeDifferencer;

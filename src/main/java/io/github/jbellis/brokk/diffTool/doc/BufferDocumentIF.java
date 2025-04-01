@@ -37,4 +37,8 @@ public interface BufferDocumentIF {
             throws Exception;
 
     boolean isReadonly();
+
+    String getLineText(int lineNumber);
+
+    int getNumberOfLines();
 }

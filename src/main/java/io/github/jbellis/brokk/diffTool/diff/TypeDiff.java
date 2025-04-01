@@ -1,4 +1,5 @@
 package io.github.jbellis.brokk.diffTool.diff;
+
 public enum TypeDiff {
     ADD("Add"),
     DELETE("Del"),

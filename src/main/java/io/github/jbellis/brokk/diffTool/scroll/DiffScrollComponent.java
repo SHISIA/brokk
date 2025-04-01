@@ -1,5 +1,6 @@
 package io.github.jbellis.brokk.diffTool.scroll;
 
+
 import io.github.jbellis.brokk.diffTool.diff.JMChunk;
 import io.github.jbellis.brokk.diffTool.diff.JMDelta;
 import io.github.jbellis.brokk.diffTool.diff.JMRevision;
@@ -14,9 +15,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
@@ -43,8 +42,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         getToPanel().getScrollPane().getViewport().addChangeListener(this);
 
         addMouseListener(getMouseListener());
-//        addKeyListener(getKeyListener());
-
+        addMouseMotionListener(getMouseMotionListener());
         initSettings();
     }
 
@@ -75,6 +73,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         repaint();
     }
 
+
     private MouseListener getMouseListener() {
         return new MouseAdapter() {
             @Override
@@ -84,6 +83,10 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
             }
         };
     }
+
+
+
+
 
     public void executeCommand(double x, double y) {
         if (commands == null) {
@@ -147,7 +150,6 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         int y1;
         Color color;
         Color darkerColor;
-        Polygon shape;
         Rectangle rect;
         boolean selected;
         int selectionWidth;
@@ -436,57 +438,33 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                         g2.setColor(color);
                     }
                 }
-
-                // Draw merge right->left command.
-
-                if (bdFrom.isReadonly()) {
-                    if (!shift || revised.getSize() > 0) {
-                        shape = createTriangle(x0, y0, true);
-                        setAntiAlias(g2);
-                        g2.setColor(Color.gray);
-                        g2.fill(shape);
-                        g2.setColor(Color.black);
-                        g2.draw(shape);
-                        resetAntiAlias(g2);
-                        commands.add(new DiffChangeCommand(shape, delta, toPanelIndex,
-                                fromPanelIndex));
-                    }
-
-                    // Draw delete right command
-                    if (original.getSize() > 0 && !shift) {
-                        g2.setColor(Color.red);
-                        g2.drawLine(x0 + 3 - width, y0 + 3, x0 + 7 - width, y0 + 7);
-                        g2.drawLine(x0 + 7 - width, y0 + 3, x0 + 3 - width, y0 + 7);
-                        rect = new Rectangle(x0 + 2 - width, y0 + 2, 6, 6);
-                        commands.add(new DiffDeleteCommand(rect, delta, fromPanelIndex,
-                                toPanelIndex));
-                    }
-                }
-
+                Polygon shape;
                 // Draw merge left->right command.
                 if (bdTo.isReadonly()) {
                     if (!shift || original.getSize() > 0) {
-                        shape = createTriangle(x1, y1, false);
+
+                        shape = createTriangle(x1, y1,delta.isHovered() ? 2 : 1); // Scale 2x on hover
                         setAntiAlias(g2);
-                        g2.setColor(Color.gray);
-                        g2.fill(shape);
-                        g2.setColor(Color.black);
+                        g2.setColor(delta.isHovered() ? Color.gray : color);
+                        g2.fillPolygon(shape);
+                        g2.setColor(delta.isHovered() ? Color.gray : darkerColor);
                         g2.drawPolygon(shape);
                         resetAntiAlias(g2);
+
                         commands.add(new DiffChangeCommand(shape, delta, fromPanelIndex,
                                 toPanelIndex));
                     }
 
                     // Draw delete right command
                     if (revised.getSize() > 0 && !shift) {
-                        g2.setColor(Color.red);
+                        g2.setColor(Color.RED);
                         g2.drawLine(x1 + 3, y1 + 3, x1 + 7, y1 + 7);
                         g2.drawLine(x1 + 7, y1 + 3, x1 + 3, y1 + 7);
                         rect = new Rectangle(x1 + 2, y1 + 2, 6, 6);
-                        commands.add(new DiffDeleteCommand(rect, delta, toPanelIndex,
-                                fromPanelIndex));
+                        commands.add(new DiffDeleteCommand(rect, delta, toPanelIndex, fromPanelIndex));
                     }
                 }
+
             }
         } catch (BadLocationException ex) {
             ex.printStackTrace();
@@ -495,19 +473,57 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         resetAntiAlias(g2);
     }
 
-    private Polygon createTriangle(int x, int y, boolean toLeft) {
-        Polygon shape;
-        shape = new Polygon();
-        int posx = 10;
-        shape.addPoint(x + (toLeft ? -posx : posx), y);
-        posx -= 11;
-        shape.addPoint(x + (toLeft ? -posx : posx), y + -4);
-        shape.addPoint(x + (toLeft ? -posx : posx), y + +4);
+    private Polygon createTriangle(int x, int y, int scale) {
+        Polygon shape = new Polygon();
+
+        // Base points for a small triangle
+        int posx = 10 * scale;
+        shape.addPoint(x + posx, y);
+
+        posx = -6 * scale;
+        shape.addPoint(x + posx, y - (4 * scale));
+        shape.addPoint(x + posx, y + (4 * scale));
+
         return shape;
     }
 
+
+
+    private MouseMotionListener getMouseMotionListener() {
+        return new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                boolean repaintNeeded = false;
+
+                for (Command cmd : commands) {
+                    if (cmd instanceof DiffChangeCommand diffCmd) {
+                        boolean isInside = diffCmd.shape.contains(e.getPoint());
+                        if (diffCmd.delta.isHovered() != isInside) { // Update only if state changes
+                            diffCmd.delta.setHovered(isInside);
+                            repaintNeeded = true;
+                        }
+                    }
+                }
+
+                if (repaintNeeded) {
+                    repaint();
+                }
+            }
+        };
+    }
+
+
+    private MouseWheelListener getMouseWheelListener() {
+        return me -> {
+            diffPanel.toNextDelta(me.getWheelRotation() > 0);
+            repaint();
+        };
+    }
+
+
     class DiffChangeCommand
             extends Command {
+
         DiffChangeCommand(Shape shape, JMDelta delta, int fromIndex, int toIndex) {
             super(shape, delta, fromIndex, toIndex);
         }
@@ -539,13 +555,16 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         JMDelta delta;
         int fromIndex;
         int toIndex;
+        Shape shape;
 
         Command(Shape shape, JMDelta delta, int fromIndex, int toIndex) {
             this.bounds = shape.getBounds();
+            this.shape = shape;
             this.delta = delta;
             this.fromIndex = fromIndex;
             this.toIndex = toIndex;
         }
+
 
         boolean contains(double x, double y) {
             return bounds.contains(x, y);

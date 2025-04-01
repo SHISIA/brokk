@@ -14,27 +14,37 @@ import io.github.jbellis.brokk.diffTool.node.BufferNode;
 import io.github.jbellis.brokk.diffTool.node.JMDiffNode;
 import io.github.jbellis.brokk.diffTool.scroll.DiffScrollComponent;
 import io.github.jbellis.brokk.diffTool.scroll.ScrollSynchronizer;
+import io.github.jbellis.brokk.diffTool.search.SearchBarDialog;
 
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BufferDiffPanel extends JPanel {
+public class BufferDiffPanel extends AbstractContentPanel {
     public static final int LEFT = 0;
     public static final int RIGHT = 2;
     public static final int NUMBER_OF_PANELS = 3;
+
+
     private final BrokkDiffPanel mainPanel;
     private FilePanel[] filePanels;
     private JMDiffNode diffNode;
     private JMRevision currentRevision;
     private JMDelta selectedDelta;
     private int selectedLine;
+    private SearchBarDialog leftBar;
+    private SearchBarDialog rightBar;
+    private JCheckBox caseSensitiveCheckBox;
+
     private ScrollSynchronizer scrollSynchronizer;
     private JMDiff diff;
     private JSplitPane splitPane;
+
+    int filePanelSelectedIndex = -1;
 
     static Color selectionColor = Color.BLUE;
     static Color newColor = Color.CYAN;
@@ -44,6 +54,21 @@ public class BufferDiffPanel extends JPanel {
         selectionColor = new Color(selectionColor.getRed() * newColor.getRed() / mixColor.getRed()
                 , selectionColor.getGreen() * newColor.getGreen() / mixColor.getGreen()
                 , selectionColor.getBlue() * newColor.getBlue() / mixColor.getBlue());
+    }
+
+
+    public ScrollSynchronizer getScrollSynchronizer() {
+        return scrollSynchronizer;
+    }
+
+    public BrokkDiffPanel getMainPanel() {
+        return mainPanel;
+    }
+
+
+
+    public int getFilePanelSelectedIndex() {
+        return filePanelSelectedIndex;
     }
 
     public BufferDiffPanel(BrokkDiffPanel mainPanel) {
@@ -202,10 +227,39 @@ public class BufferDiffPanel extends JPanel {
         if (splitPane != null) {
             remove(splitPane);
         }
-        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, buildFilePanel(columns, rows), null);
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, activateBarDialog(), buildFilePanel(columns, rows));
         add(splitPane);
-
+        //just synchronizes scrolling, nothing UI building related
         scrollSynchronizer = new ScrollSynchronizer(this, filePanels[LEFT], filePanels[RIGHT]);
+        setSelectedPanel(filePanels[LEFT]);
+        getMainPanel().updateUndoRedoButtons();
+    }
+
+
+    public JCheckBox getCaseSensitiveCheckBox() {
+        return caseSensitiveCheckBox;
+    }
+
+
+
+
+    public JComponent activateBarDialog() {
+         JPanel barContainer= new JPanel(new BorderLayout()); // Use BorderLayout for left & right placement
+        barContainer.setPreferredSize(new Dimension(800, 40)); // Set height while keeping full width
+        // Case-Sensitive Toggle:
+        caseSensitiveCheckBox = new JCheckBox("Case Sensitive");
+        caseSensitiveCheckBox.setFocusable(false); // Avoids stealing focus
+
+        leftBar = new SearchBarDialog(getMainPanel(), this);
+        rightBar = new SearchBarDialog(getMainPanel(), this);
+
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        leftPanel.add(caseSensitiveCheckBox);
+        leftPanel.add(leftBar);
+        barContainer.add(leftPanel,BorderLayout.WEST);
+        barContainer.add(rightBar,BorderLayout.EAST);
+
+        return barContainer;
     }
 
     private JPanel buildFilePanel(String columns, String rows) {
@@ -219,15 +273,22 @@ public class BufferDiffPanel extends JPanel {
 
         filePanels = new FilePanel[NUMBER_OF_PANELS];
 
-        filePanels[LEFT] = new FilePanel(this, BufferDocumentIF.ORIGINAL, LEFT);
-        filePanels[RIGHT] = new FilePanel(this, BufferDocumentIF.REVISED, RIGHT);
+        filePanels[LEFT] = new FilePanel(this, BufferDocumentIF.ORIGINAL, leftBar);
+        filePanels[RIGHT] = new FilePanel(this, BufferDocumentIF.REVISED, rightBar);
+
+        filePanel.add(new RevisionBar(this, filePanels[LEFT], true), cc.xy(2, 4));
+        filePanel.add(new JLabel(""), cc.xy(2, 2));
 
         filePanel.add(filePanels[LEFT].getScrollPane(), cc.xyw(4, 4, 3));
 
+        //the middle diff panel that holds the curves and pointers to each side of the editor
         DiffScrollComponent diffScrollComponent = new DiffScrollComponent(this, LEFT, RIGHT);
         filePanel.add(diffScrollComponent, cc.xy(7, 4));
 
+        filePanel.add(new RevisionBar(this, filePanels[RIGHT], false), cc.xy(12, 4));
         filePanel.add(filePanels[RIGHT].getScrollPane(), cc.xyw(8, 4, 3));
+
+        filePanel.setMinimumSize(new Dimension(300, 200));
         return filePanel;
     }
 
@@ -383,12 +444,44 @@ public class BufferDiffPanel extends JPanel {
         }
     }
 
+    private FilePanel getSelectedPanel() {
+        if (filePanelSelectedIndex >= 0
+                && filePanelSelectedIndex < filePanels.length) {
+            return filePanels[filePanelSelectedIndex];
+        }
+
+        return null;
+    }
+
+    void setSelectedPanel(FilePanel fp) {
+        int index;
+
+        index = -1;
+        for (int i = 0; i < filePanels.length; i++) {
+            if (filePanels[i] == fp) {
+                index = i;
+            }
+        }
+
+        if (index != filePanelSelectedIndex) {
+            if (filePanelSelectedIndex != -1) {
+                filePanels[filePanelSelectedIndex].setSelected(false);
+            }
+
+            filePanelSelectedIndex = index;
+
+            if (filePanelSelectedIndex != -1) {
+                filePanels[filePanelSelectedIndex].setSelected(true);
+            }
+        }
+    }
+
     public void setSelectedDelta(JMDelta delta) {
         selectedDelta = delta;
         setSelectedLine(delta == null ? 0 : delta.getOriginal().getAnchor());
     }
 
-    private void setSelectedLine(int line) {
+    public void setSelectedLine(int line) {
         selectedLine = line;
     }
 
@@ -414,5 +507,160 @@ public class BufferDiffPanel extends JPanel {
         }
 
         return filePanels[index];
+    }
+
+    public void doGotoDelta(JMDelta delta) {
+        setSelectedDelta(delta);
+        showSelectedDelta();
+    }
+
+    public void doGotoLine(int line) {
+        BufferDocumentIF bd;
+        int offset;
+        int startOffset;
+        int endOffset;
+        JViewport viewport;
+        JTextComponent editor;
+        Point p;
+        FilePanel fp;
+        Rectangle rect;
+
+        setSelectedLine(line);
+
+        fp = getFilePanel(0);
+
+        bd = fp.getBufferDocument();
+        if (bd == null) {
+            return;
+        }
+
+        offset = bd.getOffsetForLine(line);
+        viewport = fp.getScrollPane().getViewport();
+        editor = fp.getEditor();
+
+        // Don't go anywhere if the line is already visible.
+        rect = viewport.getViewRect();
+        startOffset = editor.viewToModel(rect.getLocation());
+        endOffset = editor.viewToModel(new Point(rect.x, rect.y + rect.height));
+        if (offset >= startOffset && offset <= endOffset) {
+            return;
+        }
+
+        try {
+            p = editor.modelToView(offset).getLocation();
+            p.x = 0;
+
+            viewport.setViewPosition(p);
+        } catch (BadLocationException ex) {
+        }
+    }
+
+    private void showSelectedDelta() {
+        JMDelta delta;
+
+        delta = getSelectedDelta();
+        if (delta == null) {
+            return;
+        }
+
+        scrollSynchronizer.showDelta(delta);
+    }
+
+    @Override
+    public void doUndo() {
+        super.doUndo();
+        getMainPanel().updateUndoRedoButtons(); // Update buttons after performing undo
+    }
+
+    @Override
+    public void doRedo() {
+        super.doRedo();
+        getMainPanel().updateUndoRedoButtons();  // Update buttons after performing redo
+    }
+
+    @Override
+    public void doDown() {
+        JMDelta d;
+
+        List<JMDelta> deltas;
+        int index;
+
+        if (currentRevision == null) {
+            return;
+        }
+
+        deltas = currentRevision.getDeltas();
+        JMDelta sd = getSelectedDelta();
+        index = deltas.indexOf(sd);
+        if (index == -1 || sd.getOriginal().getAnchor() != selectedLine) {
+            // Find the delta that would have been next to the
+            //   disappeared delta:
+            d = null;
+            for (JMDelta delta : deltas) {
+                d = delta;
+                if (delta.getOriginal().getAnchor() > selectedLine) {
+                    break;
+                }
+            }
+
+            setSelectedDelta(d);
+        } else {
+            // Select the next delta if there is any.
+            if (index + 1 < deltas.size()) {
+                setSelectedDelta(deltas.get(index + 1));
+            }
+        }
+
+        showSelectedDelta();
+    }
+
+    @Override
+    public void doUp() {
+        JMDelta d;
+        JMDelta sd;
+        JMDelta previousDelta;
+        List<JMDelta> deltas;
+        int index;
+
+        if (currentRevision == null) {
+            return;
+        }
+
+        deltas = currentRevision.getDeltas();
+        sd = getSelectedDelta();
+        index = deltas.indexOf(sd);
+        if (index == -1 || sd.getOriginal().getAnchor() != selectedLine) {
+            // Find the delta that would have been previous to the
+            //   disappeared delta:
+            d = null;
+            previousDelta = null;
+            for (JMDelta delta : deltas) {
+                d = delta;
+                if (delta.getOriginal().getAnchor() > selectedLine) {
+                    if (previousDelta != null) {
+                        d = previousDelta;
+                    }
+                    break;
+                }
+
+                previousDelta = delta;
+            }
+
+            setSelectedDelta(d);
+        } else {
+            // Select the next delta if there is any.
+            if (index - 1 >= 0) {
+                setSelectedDelta(deltas.get(index - 1));
+            }
+        }
+        showSelectedDelta();
+    }
+
+    public void toNextDelta(boolean next) {
+        if (next) {
+            doDown();
+        } else {
+            doUp();
+        }
     }
 }

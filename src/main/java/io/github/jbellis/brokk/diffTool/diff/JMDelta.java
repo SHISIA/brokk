@@ -11,6 +11,15 @@ public class JMDelta {
     private TypeDiff type;
     private JMRevision revision;
     private JMRevision changeRevision;
+    private boolean hovered=false;
+
+    public void setHovered(boolean hovered) {
+        this.hovered = hovered;
+    }
+
+    public boolean isHovered() {
+        return hovered;
+    }
 
     public JMDelta(JMChunk original, JMChunk revised) {
         this.original = original;

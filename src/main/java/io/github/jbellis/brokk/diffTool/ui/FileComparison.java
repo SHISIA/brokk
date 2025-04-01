@@ -4,8 +4,12 @@ import io.github.jbellis.brokk.diffTool.node.FileNode;
 import io.github.jbellis.brokk.diffTool.node.JMDiffNode;
 import io.github.jbellis.brokk.diffTool.node.StringNode;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 
@@ -29,6 +33,11 @@ public class FileComparison extends SwingWorker<String, Object> {
         this.contentRightTitle = contentRightTitle;
         this.contentLeft = contentLeft;
         this.contentRight = contentRight;
+    }
+
+
+    public BufferDiffPanel getPanel() {
+        return panel;
     }
 
     @Override
@@ -79,6 +88,21 @@ public class FileComparison extends SwingWorker<String, Object> {
         return node;
     }
 
+    private static ImageIcon getScaledIcon(String path, int width, int height) {
+        try {
+            // Load the image
+            BufferedImage originalImage = ImageIO.read(Objects.requireNonNull(FileComparison.class.getResource(path)));
+
+            // Scale the image
+            Image scaledImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+
+            return new ImageIcon(scaledImage);
+        } catch (IOException | NullPointerException e) {
+            System.err.println("Image not found: " + path);
+            return null;
+        }
+    }
+
     @Override
     protected void done() {
         try {
@@ -88,7 +112,9 @@ public class FileComparison extends SwingWorker<String, Object> {
             } else {
                 panel = new BufferDiffPanel(mainPanel);
                 panel.setDiffNode(diffNode);
-                mainPanel.getTabbedPane().addTab(panel.getTitle(), new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/compare.png"))), panel);
+                ImageIcon resizedIcon = getScaledIcon("/images/compare.png", 24, 24); // Change size here
+
+                mainPanel.getTabbedPane().addTab(panel.getTitle(), resizedIcon, panel);
                 mainPanel.getTabbedPane().setSelectedComponent(panel);
             }
         } catch (Exception ex) {

@@ -1,6 +1,7 @@
 
 package io.github.jbellis.brokk.diffTool.diff;
 
+
 import io.github.jbellis.brokk.diffTool.doc.AbstractBufferDocument;
 
 import java.nio.CharBuffer;

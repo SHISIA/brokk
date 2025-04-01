@@ -7,6 +7,10 @@ import io.github.jbellis.brokk.diffTool.diff.JMRevision;
 import io.github.jbellis.brokk.diffTool.doc.BufferDocumentChangeListenerIF;
 import io.github.jbellis.brokk.diffTool.doc.BufferDocumentIF;
 import io.github.jbellis.brokk.diffTool.doc.JMDocumentEvent;
+import io.github.jbellis.brokk.diffTool.search.SearchBarDialog;
+import io.github.jbellis.brokk.diffTool.search.SearchCommand;
+import io.github.jbellis.brokk.diffTool.search.SearchHit;
+import io.github.jbellis.brokk.diffTool.search.SearchHits;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -15,31 +19,39 @@ import javax.swing.text.Highlighter;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 public class FilePanel implements BufferDocumentChangeListenerIF {
     private static final int MAXSIZE_CHANGE_DIFF = 1000;
 
-    private BufferDiffPanel diffPanel;
+    private final BufferDiffPanel diffPanel;
     private final String name;
     private JScrollPane scrollPane;
     private JTextArea editor;
     private BufferDocumentIF bufferDocument;
-    private JButton saveButton;
     private Timer timer;
+    private boolean selected;
+    private SearchHits searchHits;
+    private final SearchBarDialog bar;
 
-    public FilePanel(BufferDiffPanel diffPanel, String name, int position) {
+    public FilePanel(BufferDiffPanel diffPanel, String name, SearchBarDialog bar) {
         this.diffPanel = diffPanel;
         this.name = name;
+        this.bar = bar;
         init();
     }
 
     private void init() {
-
         // Initialize text editor with custom highlighting
         editor = new JTextArea();
         editor.setHighlighter(new JMHighlighter());
+        editor.addFocusListener(getFocusListener());
+        bar.setFilePanel(this);
+
+        editor.getDocument().addUndoableEditListener(diffPanel.getUndoHandler()); // Add undo listener
+
         // Wrap editor inside a scroll pane with optimized scrolling
         scrollPane = new JScrollPane(editor);
         scrollPane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
@@ -51,26 +63,13 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
             layout.syncWithScrollPane(scrollPane);
         }
 
-
-
-        // Configure save button with an icon
-        saveButton = new JButton();
-        saveButton.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-        saveButton.setContentAreaFilled(false);
-
-        // Attempt to set an online icon for the save button
-        try {
-            saveButton.setIcon(new ImageIcon(new URL("https://img.icons8.com/?size=60&id=59875&format=png")));
-        } catch (MalformedURLException e) {
-            e.printStackTrace(); // Log the error if the URL is invalid
-        }
-
-        // Assign action listener to handle save button clicks
-        saveButton.addActionListener(getSaveButtonAction());
-
         // Setup a one-time timer to refresh the UI after 100ms
         timer = new Timer(100, refresh());
         timer.setRepeats(false);
+
+//        diffPanel.getCaseSensitiveCheckBox().addActionListener(e -> {
+//            doSearch()
+//        });
     }
 
 
@@ -88,11 +87,16 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
 
 
     public void setBufferDocument(BufferDocumentIF bd) {
+        Document previousDocument;
         Document document;
         try {
             if (bufferDocument != null) {
                 bufferDocument.removeChangeListener(this);
-
+                previousDocument = bufferDocument.getDocument();
+                if (previousDocument != null) {
+                    previousDocument.removeUndoableEditListener(diffPanel
+                            .getUndoHandler());
+                }
             }
 
             bufferDocument = bd;
@@ -102,6 +106,7 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
                 editor.setDocument(document);
                 editor.setTabSize(4);
                 bufferDocument.addChangeListener(this);
+                document.addUndoableEditListener(diffPanel.getUndoHandler());
             }
 
             initConfiguration();
@@ -115,9 +120,13 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
         }
     }
 
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
 
     public void reDisplay() {
         removeHighlights();
+        paintSearchHighlights();
         paintRevisionHighlights();
         getHighlighter().repaint();
     }
@@ -335,6 +344,16 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
         return ae -> diffPanel.diff();
     }
 
+    public FocusListener getFocusListener() {
+        return new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent fe) {
+                diffPanel.setSelectedPanel(FilePanel.this);
+            }
+        };
+    }
+
+
     private void initConfiguration() {
         Font font = new Font("Arial", Font.PLAIN, 14);
         editor.setBorder(new LineNumberBorder(this));
@@ -358,5 +377,128 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
             super.layoutContainer(parent);
             parent.setComponentOrientation(originalOrientation);
         }
+    }
+
+    public void doStopSearch() {
+        searchHits = null;
+        reDisplay();
+    }
+
+    SearchCommand getSearchCommand() {
+        return bar.getCommand();
+    }
+
+    public SearchHits doSearch() {
+            int numberOfLines;
+            BufferDocumentIF doc;
+            String text;
+            int index, fromIndex;
+            boolean caseSensitive;
+            String searchText, searchTextToCompare, textToSearch;
+            SearchHit searchHit;
+            int offset;
+            SearchCommand searchCommand;
+
+            searchCommand = getSearchCommand();
+            if (searchCommand == null) {
+                return null;
+            }
+
+            searchText = searchCommand.searchText();
+            caseSensitive = searchCommand.isCaseSensitive(); // Get case-sensitive flag
+
+            doc = getBufferDocument();
+            numberOfLines = doc.getNumberOfLines();
+
+            searchHits = new SearchHits();
+
+            if (!searchText.isEmpty()) {
+                for (int line = 0; line < numberOfLines; line++) {
+                    text = doc.getLineText(line);
+
+                    // Adjust case based on case-sensitive flag
+                    if (!caseSensitive) {
+                        textToSearch = text.toLowerCase();
+                        searchTextToCompare = searchText.toLowerCase();
+                    } else {
+                        textToSearch = text;
+                        searchTextToCompare = searchText;
+                    }
+
+                    fromIndex = 0;
+                    while ((index = textToSearch.indexOf(searchTextToCompare, fromIndex)) != -1) {
+                        offset = bufferDocument.getOffsetForLine(line);
+                        if (offset < 0) {
+                            continue;
+                        }
+
+                        searchHit = new SearchHit(line, offset + index, searchText.length());
+                        searchHits.add(searchHit);
+
+                        fromIndex = index + searchHit.getSize();
+                    }
+                }
+            }
+
+            reDisplay();
+            scrollToSearch(this, searchHits);
+            return getSearchHits();
+    }
+
+
+    SearchHits getSearchHits() {
+        return searchHits;
+    }
+    private void paintSearchHighlights() {
+        if (searchHits != null) {
+            for (SearchHit sh : searchHits.getSearchHits()) {
+                setHighlight(JMHighlighter.LAYER2, sh.getFromOffset(),
+                        sh.getToOffset(),
+                        searchHits.isCurrent(sh)
+                                ? JMHighlightPainter.CURRENT_SEARCH: JMHighlightPainter.SEARCH);
+            }
+        }
+    }
+
+
+
+
+    public void doPreviousSearch() {
+        SearchHits searchHits = getSearchHits();
+        if (searchHits==null) {
+            return;
+        }
+        searchHits.previous();
+        reDisplay();
+
+        scrollToSearch(this, searchHits);
+    }
+
+    private void scrollToSearch(FilePanel fp, SearchHits searchHits) {
+        SearchHit currentHit;
+        int line;
+
+        if (searchHits == null) {
+            return;
+        }
+
+        currentHit = searchHits.getCurrent();
+        if (currentHit != null) {
+            line = currentHit.getLine();
+
+            diffPanel.getScrollSynchronizer().scrollToLine(fp, line);
+            diffPanel.setSelectedLine(line);
+        }
+    }
+
+    public void doNextSearch() {
+        SearchHits searchHits = getSearchHits();
+       if (searchHits==null) {
+           return;
+       }
+        searchHits.next();
+        reDisplay();
+
+        scrollToSearch(this, searchHits);
     }
 }

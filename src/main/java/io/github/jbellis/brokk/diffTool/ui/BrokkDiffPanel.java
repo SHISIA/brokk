@@ -20,6 +20,7 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
     private final File rightFile;
     private final String contentLeftTitle;
     private final String contentRightTitle;
+    private FileComparison fileComparison;
 
     public boolean isFileComparison() {
         return isFileComparison;
@@ -47,7 +48,7 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         this.leftFile = leftFile;
         this.rightFile = rightFile;
         this.isFileComparison = isFileComparison;
-    // Make the container focusable, so it can handle key events
+        // Make the container focusable, so it can handle key events
         setFocusable(true);
         tabbedPane = new JTabbedPane();
 
@@ -56,11 +57,11 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
             public void ancestorAdded(AncestorEvent event) {
                 start();
             }
-
             public void ancestorMoved(AncestorEvent event) {}
 
             public void ancestorRemoved(AncestorEvent event) {}
         });
+
         revalidate();
     }
 
@@ -76,7 +77,72 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         getTabbedPane().setFocusable(false);
         setLayout(new BorderLayout());
         launchComparison();
+
+        add(createToolbar(), BorderLayout.NORTH);
         add(getTabbedPane(), BorderLayout.CENTER);
+    }
+
+    public JButton getBtnUndo() {
+        return btnUndo;
+    }
+
+    private JButton btnUndo;
+
+    public JButton getBtnRedo() {
+        return btnRedo;
+    }
+
+    private JButton btnRedo;
+
+    private JToolBar createToolbar() {
+        // Create toolbar
+        JToolBar toolBar = new JToolBar();
+
+        // Create buttons
+        JButton btnNext = new JButton("Next Change");
+        JButton btnPrevious = new JButton("Previous Change");
+        btnUndo = new JButton("Undo");
+        btnRedo = new JButton("Redo");
+
+        btnUndo.addActionListener(e -> getCurrentContentPanel().doUndo());
+
+        btnRedo.addActionListener(e -> getCurrentContentPanel().doRedo());
+
+        btnNext.addActionListener(e -> {
+            getCurrentContentPanel().doDown();
+            repaint();
+        });
+        btnPrevious.addActionListener(e -> {
+            getCurrentContentPanel().doUp();
+            repaint();
+        });
+        btnUndo.addActionListener(e -> {
+            getCurrentContentPanel().doUndo();
+        });
+        btnRedo.addActionListener(e -> {
+            getCurrentContentPanel().doRedo();
+        });
+        // Add buttons to toolbar with spacing
+        toolBar.add(btnPrevious);
+        toolBar.add(Box.createHorizontalStrut(10)); // 10px spacing
+        toolBar.add(btnNext);
+        toolBar.add(Box.createHorizontalStrut(20)); // 20px spacing
+        toolBar.addSeparator(); // Adds space between groups
+        toolBar.add(Box.createHorizontalStrut(10)); // 10px spacing
+        toolBar.add(btnUndo);
+        toolBar.add(Box.createHorizontalStrut(10)); // 10px spacing
+        toolBar.add(btnRedo);
+
+        return toolBar;
+    }
+
+    public void updateUndoRedoButtons() {
+        if(getCurrentContentPanel()!=null) {
+            boolean canUndo = getCurrentContentPanel().isUndoEnabled();
+            boolean canRedo = getCurrentContentPanel().isRedoEnabled();
+            getBtnUndo().setEnabled(canUndo);
+            getBtnRedo().setEnabled(canRedo);
+        }
     }
 
     public void launchComparison() {
@@ -85,18 +151,24 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         revalidate();
         repaint();
         compare(); // Pass the stored parameters to compare()
+
     }
 
     private void compare() {
-        SwingWorker<String, Object> worker = new FileComparison(this,
+        fileComparison=new FileComparison(this,
                 leftFile,
                 rightFile,
                 contentLeftTitle,contentRightTitle,
                 contentLeft,contentRight);
 
-        worker.addPropertyChangeListener(this);
-        worker.execute();
+        fileComparison.addPropertyChangeListener(this);
+        fileComparison.execute();
     }
+
+    public AbstractContentPanel getCurrentContentPanel() {
+        return (AbstractContentPanel) getTabbedPane().getSelectedComponent();
+    }
+
 
     public void propertyChange(PropertyChangeEvent evt) {
         if ("state".equals(evt.getPropertyName()) &&
@@ -115,4 +187,5 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
             }
         }
     }
+
 }

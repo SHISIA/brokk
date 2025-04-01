@@ -1,5 +1,6 @@
 package io.github.jbellis.brokk.diffTool.objects;
 
+
 import io.github.jbellis.brokk.diffTool.diff.Diff;
 
 /**

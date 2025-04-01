@@ -1,6 +1,7 @@
 
 package io.github.jbellis.brokk.diffTool;
 
+
 import io.github.jbellis.brokk.diffTool.ui.BrokkDiffPanel;
 import io.github.jbellis.brokk.diffTool.ui.JMHighlightPainter;
 
@@ -18,7 +19,7 @@ public class BrokkDiffTool
         JMHighlightPainter.initializePainters();
         JFrame frame = new JFrame("BrokkDiffTool");
         // Creating a new BrokkDiffPanel instance for file comparison mode.
-        // The panel will compare two files: "java.txt" and "world.txt" from the desktop.
+// The panel will compare two files: "java.txt" and "world.txt" from the desktop.
         BrokkDiffPanel brokkPanel = new BrokkDiffPanel(
                 true,  // Enable file comparison mode
                 "", "", // Titles for the left and right content (empty in this case)
@@ -27,9 +28,9 @@ public class BrokkDiffTool
                 new File("C:\\Users\\Administrator\\Desktop\\world.txt")   // Right sample file to compare
         );
         frame.add(brokkPanel);
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/compare.png"))).getImage());
-        frame.setSize(800, 700);
+        frame.setSize(800, 600);
         frame.setVisible(true);
         frame.toFront();
     }

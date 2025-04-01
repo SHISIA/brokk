@@ -1,6 +1,7 @@
 package io.github.jbellis.brokk.diffTool.node;
 
 
+
 import io.github.jbellis.brokk.diffTool.diff.Ignore;
 import io.github.jbellis.brokk.diffTool.diff.JMDiff;
 import io.github.jbellis.brokk.diffTool.diff.JMRevision;

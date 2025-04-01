@@ -2,6 +2,7 @@
 package io.github.jbellis.brokk.diffTool.node;
 
 
+
 import io.github.jbellis.brokk.diffTool.doc.FileDocument;
 
 import java.io.File;

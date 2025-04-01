@@ -379,6 +379,7 @@ public abstract class AbstractBufferDocument implements BufferDocumentIF, Docume
 
     public void changedUpdate(DocumentEvent de) {
         documentChanged(de);
+
     }
 
     public void insertUpdate(DocumentEvent de) {
@@ -454,5 +455,24 @@ public abstract class AbstractBufferDocument implements BufferDocumentIF, Docume
 
     public String toString() {
         return "Document[name=" + name + "]";
+    }
+
+    public String getLineText(int lineNumber) {
+        Line[] la;
+
+        la = getLines();
+        if (la == null) {
+            return null;
+        }
+
+        if (lineNumber >= la.length || lineNumber < 0) {
+            return "<NO LINE>";
+        }
+
+        return la[lineNumber].toString();
+    }
+
+    public int getNumberOfLines() {
+        return getLines().length;
     }
 }

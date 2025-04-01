@@ -1,5 +1,7 @@
 package io.github.jbellis.brokk.diffTool.utils;
 
+import io.github.jbellis.brokk.diffTool.diff.JMDelta;
+
 import java.awt.*;
 
 public class ColorUtil
@@ -42,4 +44,19 @@ public class ColorUtil
 
     return color;
   }
+  public static Color getColor(JMDelta delta)
+  {
+    if (delta.isDelete())
+    {
+      return Colors.DELETED;
+    }
+
+    if (delta.isChange())
+    {
+      return Colors.CHANGED;
+    }
+
+    return Colors.ADDED;
+  }
+
 }
