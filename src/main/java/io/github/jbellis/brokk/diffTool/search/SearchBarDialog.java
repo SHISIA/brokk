@@ -36,19 +36,11 @@ public class SearchBarDialog extends JPanel {
 
 
     protected void init() {
-        JButton closeButton;
         JButton previousButton;
         JButton nextButton;
 
         setLayout(new FlowLayout(FlowLayout.LEADING));
 
-        // Close the search dialog:
-        closeButton = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/close.png"))));
-        closeButton.setRolloverIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/close.png"))));
-        closeButton.setPressedIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/close.png"))));
-        closeButton.addActionListener(getCloseAction());
-        initButton(closeButton);
-        closeButton.setBorder(null);
 
         // Incremental search:
         searchField = new JTextField(15);
@@ -68,7 +60,6 @@ public class SearchBarDialog extends JPanel {
         searchResult = new JLabel();
 
         initButton(previousButton);
-        add(closeButton);
         add(Box.createHorizontalStrut(5));
         add(new JLabel("Find:"));
         add(searchField);
