@@ -1,11 +1,13 @@
 
-package io.github.jbellis.brokk.diffTool;
+
+        package io.github.jbellis.brokk.diffTool;
 
 
 import io.github.jbellis.brokk.diffTool.ui.BrokkDiffPanel;
 import io.github.jbellis.brokk.diffTool.ui.JMHighlightPainter;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.util.Objects;
 
@@ -16,21 +18,61 @@ public class BrokkDiffTool
     }
 
     public void run() {
+        var leftSource = """
+                public class AccountManager {
+                    private String name;
+                    private double outstanding;
+                    private int unused;
+
+                    void printOwing() {
+                        // Print banner
+                        System.out.println("Details of account");
+                        System.out.println("-----");
+                        System.out.println("");
+
+                        // Print details
+                        System.out.println("name: " + name);
+                        System.out.println("amount: " + outstanding);
+                    }
+                }
+                """.stripIndent();
+
+        var rightSource = """
+                public class AccountManager {
+                    private String name;
+                    private double outstanding;
+
+                    void printOwing() {
+                        // Print banner
+                        System.out.println("***");
+                        System.out.println("");
+
+                        // Print details
+                        printDetails();
+                    }
+
+                    void printDetails() {
+                        System.out.println("name: " + name);
+                        System.out.println("amount: " + outstanding);
+                    }
+                }
+                """.stripIndent();
+
         JMHighlightPainter.initializePainters();
         JFrame frame = new JFrame("BrokkDiffTool");
         // Creating a new BrokkDiffPanel instance for file comparison mode.
-        // The panel will compare two files: "java.txt" and "world.txt" from the desktop.
-        BrokkDiffPanel brokkPanel = new BrokkDiffPanel(
-                true,  // Enable file comparison mode
-                "", "", // Titles for the left and right content (empty in this case)
-                "", "", // Content for direct text comparison (not used here)
-                new File("LICENSE.txt"),  // Left sample file to compare
-                new File("NOTICE.txt")   // Right sample file to compare
-        );
+        BrokkDiffPanel brokkPanel=new BrokkDiffPanel.Builder()
+//                .compareStrings(leftSource,"left-source",rightSource,"right-source")
+                //if you want to compare two files
+//                .compareFiles(new File("NOTICE.txt"),"left-source",new File("LICENSE.txt"),"right-source")
+                //if you want to compare a file and String
+                .compareStringAndFile(leftSource,"left-source",new File("LICENSE.txt"),"right-source")
+                .build();
         frame.add(brokkPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/compare.png"))).getImage());
-        frame.setSize(800, 600);
+        frame.setSize(900, 600); // Initial size
+        frame.setMinimumSize(new Dimension(800, 600)); // Enforce minimum size
         frame.setVisible(true);
         frame.toFront();
     }

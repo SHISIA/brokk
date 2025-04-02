@@ -12,29 +12,92 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-
 public class FileComparison extends SwingWorker<String, Object> {
     private final BrokkDiffPanel mainPanel;
     private JMDiffNode diffNode;
-    private File leftFile;
-    private File rightFile;
+    private final File leftFile;
+    private final File rightFile;
     private BufferDiffPanel panel;
     private final String contentLeft;
     private final String contentRight;
     private final String contentLeftTitle;
     private final String contentRightTitle;
-    public FileComparison(BrokkDiffPanel mainPanel, File leftFile, File rightFile,
-                          String contentLeftTitle, String contentRightTitle,
-                          String contentLeft,String contentRight) {
-        this.mainPanel = mainPanel;
-        this.leftFile = leftFile;
-        this.rightFile = rightFile;
-        this.contentLeftTitle = contentLeftTitle;
-        this.contentRightTitle = contentRightTitle;
-        this.contentLeft = contentLeft;
-        this.contentRight = contentRight;
+    private final boolean isTwoFilesComparison;
+    private final String leftFileTitle;
+    private final String rightFileTitle;
+
+    // Constructor
+    private FileComparison(FileComparisonBuilder builder) {
+        this.mainPanel = builder.mainPanel;
+        this.leftFile = builder.leftFile;
+        this.rightFile = builder.rightFile;
+        this.contentLeft = builder.contentLeft;
+        this.contentRight = builder.contentRight;
+        this.contentLeftTitle = builder.contentLeftTitle;
+        this.contentRightTitle = builder.contentRightTitle;
+        this.isTwoFilesComparison = builder.isTwoFilesComparison;
+        this.leftFileTitle = builder.leftFileTitle;
+        this.rightFileTitle = builder.rightFileTitle;
     }
 
+    // Static Builder class
+    public static class FileComparisonBuilder {
+        private final BrokkDiffPanel mainPanel;
+        private File leftFile;
+        private File rightFile;
+        private String contentLeft;
+        private String contentRight;
+        private String contentLeftTitle;
+        private String contentRightTitle;
+        private boolean isTwoFilesComparison;
+        private boolean isStringAndFileComparison;
+        private String leftFileTitle = "";
+        private String rightFileTitle = "";
+
+        public FileComparisonBuilder(BrokkDiffPanel mainPanel) {
+            this.mainPanel = mainPanel;
+        }
+
+        public FileComparisonBuilder withComparisonType(boolean isTwoFilesComparison, boolean isStringAndFileComparison) {
+            this.isTwoFilesComparison = isTwoFilesComparison;
+            this.isStringAndFileComparison = isStringAndFileComparison;
+            return this;
+        }
+
+        public FileComparisonBuilder withFiles(File leftFile, String leftFileTitle, File rightFile, String rightFileTitle) {
+            if (isTwoFilesComparison) {
+                this.leftFile = leftFile;
+                this.leftFileTitle = leftFileTitle;
+                this.rightFile = rightFile;
+                this.rightFileTitle = rightFileTitle;
+            }
+            return this;
+        }
+
+        public FileComparisonBuilder withStringAndFile(String contentLeft, String contentLeftTitle, File rightFile, String rightFileTitle) {
+            if (isStringAndFileComparison) {
+                this.contentLeft = contentLeft;
+                this.contentLeftTitle = contentLeftTitle;
+                this.rightFile = rightFile;
+                this.rightFileTitle = rightFileTitle;
+            }
+            return this;
+        }
+
+        public FileComparisonBuilder withStrings(String contentLeft, String contentLeftTitle, String contentRight, String contentRightTitle) {
+            if (!isTwoFilesComparison && !isStringAndFileComparison) {
+                this.contentLeft = contentLeft;
+                this.contentLeftTitle = contentLeftTitle;
+                this.contentRight = contentRight;
+                this.contentRightTitle = contentRightTitle;
+            }
+            return this;
+        }
+
+        public FileComparison build() {
+            return new FileComparison(this);
+        }
+    }
 
     public BufferDiffPanel getPanel() {
         return panel;
@@ -44,61 +107,74 @@ public class FileComparison extends SwingWorker<String, Object> {
     public String doInBackground() {
         try {
             if (diffNode == null) {
-                if (mainPanel.isFileComparison() && rightFile != null && leftFile != null) {
-                    if (leftFile.getName().isEmpty() || !leftFile.exists()) {
-                        leftFile = new File(leftFile.getName());
+                if (isTwoFilesComparison) {
+                    // Ensure both leftFile and rightFile are not null
+                    if (leftFile != null && rightFile != null) {
+                        diffNode = create(leftFileTitle, leftFile, rightFileTitle, rightFile);
+                    } else {
+                        return "Error: One or both files are null.";
                     }
-
-                    if (rightFile.getName().isEmpty() || !rightFile.exists()) {
-                        rightFile = new File(rightFile.getName());
+                } else if (mainPanel.isStringAndFileComparison()) {
+                    // Handle string and file comparison, ensuring that contentLeft is not null and rightFile is not null
+                    if (contentLeft != null && !contentLeft.isEmpty() && rightFile != null) {
+                        diffNode = createStringAndFile(contentLeftTitle, contentLeft, rightFileTitle, rightFile);
+                    } else {
+                        return "Error: Either the left content or right file is null or empty.";
                     }
-                    
-                    diffNode = create(leftFile.getName(), leftFile,
-                            rightFile.getName(), rightFile);
-                }else {
-                    diffNode = createString(contentLeftTitle, contentLeft,
-                            contentRightTitle, contentRight);
+                } else if (contentLeft != null && contentRight != null) {
+                    // Ensure both contentLeft and contentRight are not null
+                    if (!contentLeft.isEmpty() && !contentRight.isEmpty()) {
+                        diffNode = createString(contentLeftTitle, contentLeft, contentRightTitle, contentRight);
+                    } else {
+                        return "Error: One or both content values are empty.";
+                    }
+                } else {
+                    return "Error: One or both content values are null.";
                 }
             }
+
+            // If no errors, proceed to diffing
             SwingUtilities.invokeLater(() -> diffNode.diff());
         } catch (Exception ex) {
             ex.printStackTrace();
-
             return ex.getMessage();
         }
-
         return null;
     }
+
+
 
     public JMDiffNode create(String fileLeftName, File fileLeft,
                              String fileRightName, File fileRight) {
         JMDiffNode node = new JMDiffNode(fileLeftName, true);
         node.setBufferNodeLeft(new FileNode(fileLeftName, fileLeft));
         node.setBufferNodeRight(new FileNode(fileRightName, fileRight));
-
         return node;
     }
 
     public JMDiffNode createString(String fileLeftName, String leftContent,
                                    String fileRightName, String rightContent) {
         JMDiffNode node = new JMDiffNode(fileLeftName, true);
-        node.setBufferNodeLeft(new StringNode(fileLeftName,leftContent ));
+        node.setBufferNodeLeft(new StringNode(fileLeftName, leftContent));
         node.setBufferNodeRight(new StringNode(fileRightName, rightContent));
-
         return node;
     }
 
-    private static ImageIcon getScaledIcon(String path, int width, int height) {
+    public JMDiffNode createStringAndFile(String contentLeftTitle, String leftContent,
+                                          String fileRightName, File fileRight) {
+        JMDiffNode node = new JMDiffNode(contentLeftTitle, true);
+        node.setBufferNodeLeft(new StringNode(contentLeftTitle, leftContent));
+        node.setBufferNodeRight(new FileNode(fileRightName, fileRight));
+        return node;
+    }
+
+    private static ImageIcon getScaledIcon() {
         try {
-            // Load the image
-            BufferedImage originalImage = ImageIO.read(Objects.requireNonNull(FileComparison.class.getResource(path)));
-
-            // Scale the image
-            Image scaledImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-
+            BufferedImage originalImage = ImageIO.read(Objects.requireNonNull(FileComparison.class.getResource("/images/compare.png")));
+            Image scaledImage = originalImage.getScaledInstance(24, 24, Image.SCALE_SMOOTH);
             return new ImageIcon(scaledImage);
         } catch (IOException | NullPointerException e) {
-            System.err.println("Image not found: " + path);
+            System.err.println("Image not found: " + "/images/compare.png");
             return null;
         }
     }
@@ -112,8 +188,7 @@ public class FileComparison extends SwingWorker<String, Object> {
             } else {
                 panel = new BufferDiffPanel(mainPanel);
                 panel.setDiffNode(diffNode);
-                ImageIcon resizedIcon = getScaledIcon("/images/compare.png", 24, 24); // Change size here
-
+                ImageIcon resizedIcon = getScaledIcon();
                 mainPanel.getTabbedPane().addTab(panel.getTitle(), resizedIcon, panel);
                 mainPanel.getTabbedPane().setSelectedComponent(panel);
             }

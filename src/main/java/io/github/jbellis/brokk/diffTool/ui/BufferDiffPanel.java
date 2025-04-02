@@ -237,9 +237,9 @@ public class BufferDiffPanel extends AbstractContentPanel {
 
 
 
-    public JComponent activateBarDialog() {
-         JPanel barContainer= new JPanel(new BorderLayout()); // Use BorderLayout for left & right placement
-        barContainer.setPreferredSize(new Dimension(800, 40)); // Set height while keeping full width
+    public JPanel activateBarDialog() {
+        JPanel barContainer = new JPanel(new BorderLayout()); // Use BorderLayout for left & right placement
+        
         // Case-Sensitive Toggle:
         caseSensitiveCheckBox = new JCheckBox("Case Sensitive");
         caseSensitiveCheckBox.setFocusable(false); // Avoids stealing focus
@@ -247,14 +247,16 @@ public class BufferDiffPanel extends AbstractContentPanel {
         leftBar = new SearchBarDialog(getMainPanel(), this);
         rightBar = new SearchBarDialog(getMainPanel(), this);
 
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        leftPanel.add(caseSensitiveCheckBox);
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        
         leftPanel.add(leftBar);
-        barContainer.add(leftPanel,BorderLayout.WEST);
-        barContainer.add(rightBar,BorderLayout.EAST);
-
+        leftPanel.add(caseSensitiveCheckBox);
+        leftPanel.add(rightBar); // Add rightBar after the spacer
+        barContainer.add(leftPanel, BorderLayout.CENTER);
+        
         return barContainer;
     }
+
 
     private JPanel buildFilePanel(String columns, String rows) {
         FormLayout layout;

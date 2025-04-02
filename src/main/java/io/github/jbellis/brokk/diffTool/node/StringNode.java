@@ -19,7 +19,7 @@ public class StringNode implements Comparable<StringNode>, BufferNode {
 
     public StringDocument getDocument() {
         if (document == null) {
-            document = new StringDocument(content);
+            document = new StringDocument(content,name);
         }
         return document;
     }

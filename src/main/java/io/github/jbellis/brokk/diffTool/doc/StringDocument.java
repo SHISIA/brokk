@@ -8,10 +8,10 @@ import java.io.Writer;
 public class StringDocument extends AbstractBufferDocument {
     private String content;
     
-    public StringDocument(String content) {
+    public StringDocument(String content, String name) {
         this.content = (content != null) ? content : "";
-        setName("StringDocument"); // Set a default name
-        setShortName("StringDoc");
+        setName(name); // Set a default name
+        setShortName(name);
     }
 
     @Override

@@ -134,8 +134,6 @@ public abstract class AbstractBufferDocument implements BufferDocumentIF, Docume
                 document.removeDocumentListener(this);
             }
 
-            System.out.println("before read : " + this);
-
             content = new MyGapContent(getBufferSize() + 500);
             document = new PlainDocument(content);
 

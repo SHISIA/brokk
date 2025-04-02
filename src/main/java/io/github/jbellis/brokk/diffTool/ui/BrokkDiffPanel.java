@@ -13,46 +13,34 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
     private final JTabbedPane tabbedPane;
     private boolean started;
     private final JLabel loadingLabel = new JLabel("Processing... Please wait.");
-    private final String contentLeft;
-    private final String contentRight;
-    private boolean isFileComparison;
     private final File leftFile;
     private final File rightFile;
-    private final String contentLeftTitle;
-    private final String contentRightTitle;
-    private FileComparison fileComparison;
+    private final String contentLeft;
+    private final String contentRight;
+    private final String leftFileTitle;
+    private final String rightFileTitle;
+    private final boolean isTwoFilesComparison;
+    private final boolean isStringAndFileComparison;
+
+    public boolean isTwoFilesComparison() {
+        return isTwoFilesComparison;
+    }
+
+    public boolean isStringAndFileComparison() {
+        return isStringAndFileComparison;
+    }
     
-    public boolean isFileComparison() {
-        return isFileComparison;
-    }
+     
+    public BrokkDiffPanel(Builder builder) {
+        this.leftFile = builder.leftFile;
+        this.rightFile = builder.rightFile;
+        this.contentLeft = builder.contentLeft;
+        this.contentRight = builder.contentRight;
+        this.leftFileTitle = builder.leftFileTitle;
+        this.rightFileTitle = builder.rightFileTitle;
+        this.isTwoFilesComparison = builder.isTwoFilesComparison;
+        this.isStringAndFileComparison = builder.isStringAndFileComparison;
 
-    public void setIsFileComparison(boolean isFileComparison) {
-        this.isFileComparison = isFileComparison;
-    }
-
-
-    /**
-     * Constructor for BrokkDiffPanel, a panel designed to compare either text content or files.
-     *
-     * @param isFileComparison  Determines whether the comparison is file-based (true) or text-based (false).
-     * @param contentLeftTitle  Title for the left content area (used in text comparison mode).
-     * @param contentRightTitle Title for the right content area (used in text comparison mode).
-     * @param contentLeft       The actual content for the left side (used in text comparison mode).
-     * @param contentRight      The actual content for the right side (used in text comparison mode).
-     * @param leftFile          The file to be used on the left side (used in file comparison mode).
-     * @param rightFile         The file to be used on the right side (used in file comparison mode).
-     */
-    public BrokkDiffPanel(boolean isFileComparison,
-                          String contentLeftTitle, String contentRightTitle,
-                          String contentLeft, String contentRight,
-                          File leftFile, File rightFile) {
-        this.contentLeftTitle = contentLeftTitle;
-        this.contentRightTitle = contentRightTitle;
-        this.contentLeft = contentLeft;
-        this.contentRight = contentRight;
-        this.leftFile = leftFile;
-        this.rightFile = rightFile;
-        setIsFileComparison(isFileComparison && leftFile!=null && rightFile!=null);
         // Make the container focusable, so it can handle key events
         setFocusable(true);
         tabbedPane = new JTabbedPane();
@@ -67,6 +55,51 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         });
 
         revalidate();
+    }
+
+    // Builder Class
+    public static class Builder {
+        private File leftFile;
+        private File rightFile;
+        private String contentLeft;
+        private String contentRight;
+        private String leftFileTitle = "";
+        private String rightFileTitle = "";
+        private boolean isTwoFilesComparison = false;
+        private boolean isStringAndFileComparison = false;
+
+        // Compare two files
+        public Builder compareFiles(File leftFile, String leftFileTitle, File rightFile, String rightFileTitle) {
+            this.leftFile = leftFile;
+            this.rightFile = rightFile;
+            this.leftFileTitle = leftFileTitle;
+            this.rightFileTitle = rightFileTitle;
+            this.isTwoFilesComparison = true;
+            return this;
+        }
+
+        // Compare a string and a file
+        public Builder compareStringAndFile(String contentLeft, String contentLeftTitle, File rightFile, String rightFileTitle) {
+            this.contentLeft = contentLeft;
+            this.leftFileTitle = contentLeftTitle;
+            this.rightFile = rightFile;
+            this.rightFileTitle = rightFileTitle;
+            this.isStringAndFileComparison = true;
+            return this;
+        }
+
+        // Compare two strings
+        public Builder compareStrings(String contentLeft, String contentLeftTitle, String contentRight, String contentRightTitle) {
+            this.contentLeft = contentLeft;
+            this.contentRight = contentRight;
+            this.leftFileTitle = contentLeftTitle;
+            this.rightFileTitle = contentRightTitle;
+            return this;
+        }
+
+        public BrokkDiffPanel build() {
+            return new BrokkDiffPanel(this);
+        }
     }
 
     public JTabbedPane getTabbedPane() {
@@ -159,15 +192,18 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
     }
 
     private void compare() {
-        fileComparison=new FileComparison(this,
-                leftFile,
-                rightFile,
-                contentLeftTitle,contentRightTitle,
-                contentLeft,contentRight);
+        FileComparison fileComparison = new FileComparison.FileComparisonBuilder(this)
+                .withComparisonType(isTwoFilesComparison, isStringAndFileComparison)
+                .withFiles(leftFile, leftFileTitle, rightFile, rightFileTitle)
+                .withStringAndFile(contentLeft, leftFileTitle, rightFile, rightFileTitle)
+                .withStrings(contentLeft, leftFileTitle, contentRight, rightFileTitle)
+                .build();
 
         fileComparison.addPropertyChangeListener(this);
         fileComparison.execute();
     }
+
+
 
     public AbstractContentPanel getCurrentContentPanel() {
         return (AbstractContentPanel) getTabbedPane().getSelectedComponent();

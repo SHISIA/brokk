@@ -12,22 +12,22 @@ public class FileDocument
     extends AbstractBufferDocument
 {
   // instance variables:
-  private File file;
+  private final File file;
   private Charset charset;
-  private Map<String, Charset> charsetMap;
+  private final Map<String, Charset> charsetMap;
 
-  public FileDocument(File file)
+  public FileDocument(File file,String name)
   {
     this.file = file;
     charsetMap = Charset.availableCharsets();
     try
     {
-      setName(file.getCanonicalPath());
+      setName(name);
     }
     catch (Exception ex)
     {
       ex.printStackTrace();
-      setName(file.getName());
+      setName(name);
     }
 
     setShortName(file.getName());

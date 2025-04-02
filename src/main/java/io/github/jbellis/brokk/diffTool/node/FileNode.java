@@ -24,7 +24,7 @@ public class FileNode implements Comparable<FileNode> , BufferNode {
 
   public FileDocument getDocument() {
     if (document == null || file.lastModified() != fileLastModified) {
-      document = new FileDocument(file);
+      document = new FileDocument(file,name);
       fileLastModified = file.lastModified();
     }
     return document;
