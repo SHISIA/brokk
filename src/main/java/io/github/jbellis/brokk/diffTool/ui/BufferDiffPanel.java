@@ -22,6 +22,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BufferDiffPanel extends AbstractContentPanel {
@@ -247,12 +248,17 @@ public class BufferDiffPanel extends AbstractContentPanel {
         leftBar = new SearchBarDialog(getMainPanel(), this);
         rightBar = new SearchBarDialog(getMainPanel(), this);
 
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         
+        leftPanel.add(Box.createHorizontalStrut(5)); // Add space between checkbox and left bar
         leftPanel.add(leftBar);
-        leftPanel.add(caseSensitiveCheckBox);
-        leftPanel.add(rightBar); // Add rightBar after the spacer
-        barContainer.add(leftPanel, BorderLayout.CENTER);
+
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        rightPanel.add(rightBar);
+        rightPanel.add(Box.createHorizontalStrut(5)); // Add space between checkbox and left bar
+        barContainer.add(caseSensitiveCheckBox, BorderLayout.WEST);
+        barContainer.add(leftPanel,BorderLayout.CENTER);
+        barContainer.add(rightPanel, BorderLayout.EAST);
         
         return barContainer;
     }
@@ -552,13 +558,10 @@ public class BufferDiffPanel extends AbstractContentPanel {
     }
 
     private void showSelectedDelta() {
-        JMDelta delta;
-
-        delta = getSelectedDelta();
+        JMDelta delta = getSelectedDelta();
         if (delta == null) {
             return;
         }
-
         scrollSynchronizer.showDelta(delta);
     }
 
@@ -598,7 +601,6 @@ public class BufferDiffPanel extends AbstractContentPanel {
                     break;
                 }
             }
-
             setSelectedDelta(d);
         } else {
             // Select the next delta if there is any.
@@ -606,40 +608,29 @@ public class BufferDiffPanel extends AbstractContentPanel {
                 setSelectedDelta(deltas.get(index + 1));
             }
         }
-
         showSelectedDelta();
     }
+
 
     @Override
     public void doUp() {
         JMDelta d;
-        JMDelta sd;
-        JMDelta previousDelta;
-        List<JMDelta> deltas;
-        int index;
-
         if (currentRevision == null) {
             return;
         }
 
-        deltas = currentRevision.getDeltas();
-        sd = getSelectedDelta();
-        index = deltas.indexOf(sd);
+        List<JMDelta> deltas = currentRevision.getDeltas();
+        JMDelta sd = getSelectedDelta();
+        int index = deltas.indexOf(sd);
         if (index == -1 || sd.getOriginal().getAnchor() != selectedLine) {
             // Find the delta that would have been previous to the
             //   disappeared delta:
             d = null;
-            previousDelta = null;
             for (JMDelta delta : deltas) {
                 d = delta;
                 if (delta.getOriginal().getAnchor() > selectedLine) {
-                    if (previousDelta != null) {
-                        d = previousDelta;
-                    }
                     break;
                 }
-
-                previousDelta = delta;
             }
 
             setSelectedDelta(d);
@@ -647,6 +638,26 @@ public class BufferDiffPanel extends AbstractContentPanel {
             // Select the next delta if there is any.
             if (index - 1 >= 0) {
                 setSelectedDelta(deltas.get(index - 1));
+                if (index-1==0){
+                    Arrays.stream(filePanels).forEach(
+                            item ->
+                            {
+                                if (item != null) {
+                                    item.getScrollPane().getVerticalScrollBar()
+                                            .setValue(0);
+                                }
+                            });
+                }
+            } else {
+                setSelectedDelta(deltas.getFirst());
+                Arrays.stream(filePanels).forEach(
+                        item ->
+                        {
+                            if (item != null) {
+                                item.getScrollPane().getVerticalScrollBar()
+                                        .setValue(0);
+                            }
+                        });
             }
         }
         showSelectedDelta();

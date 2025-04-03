@@ -84,6 +84,16 @@ public class FileComparison extends SwingWorker<String, Object> {
             return this;
         }
 
+        public FileComparisonBuilder withStringAndFile(File leftFile, String leftFileTitle,String contentRight, String contentRightTitle) {
+            if (isStringAndFileComparison) {
+                this.contentRight = contentRight;
+                this.contentRightTitle = contentRightTitle;
+                this.leftFile = leftFile;
+                this.leftFileTitle = leftFileTitle;
+            }
+            return this;
+        }
+
         public FileComparisonBuilder withStrings(String contentLeft, String contentLeftTitle, String contentRight, String contentRightTitle) {
             if (!isTwoFilesComparison && !isStringAndFileComparison) {
                 this.contentLeft = contentLeft;
@@ -118,6 +128,8 @@ public class FileComparison extends SwingWorker<String, Object> {
                     // Handle string and file comparison, ensuring that contentLeft is not null and rightFile is not null
                     if (contentLeft != null && !contentLeft.isEmpty() && rightFile != null) {
                         diffNode = createStringAndFile(contentLeftTitle, contentLeft, rightFileTitle, rightFile);
+                    } else if (contentRight != null && !contentRight.isEmpty() && leftFile != null) {
+                        diffNode = createStringAndFile(leftFileTitle, leftFile, contentRightTitle, contentRight);
                     } else {
                         return "Error: Either the left content or right file is null or empty.";
                     }
@@ -165,6 +177,15 @@ public class FileComparison extends SwingWorker<String, Object> {
         JMDiffNode node = new JMDiffNode(contentLeftTitle, true);
         node.setBufferNodeLeft(new StringNode(contentLeftTitle, leftContent));
         node.setBufferNodeRight(new FileNode(fileRightName, fileRight));
+        return node;
+    }
+
+    public JMDiffNode createStringAndFile(String fileLeftName, File fileLeft, String contentRightTitle,
+                                          String rightContent) {
+        JMDiffNode node = new JMDiffNode(contentLeftTitle, true);
+        node.setBufferNodeLeft(new FileNode(fileLeftName, fileLeft));
+        node.setBufferNodeRight(new StringNode(contentRightTitle, rightContent));
+
         return node;
     }
 

@@ -39,39 +39,52 @@ public class SearchBarDialog extends JPanel {
         JButton previousButton;
         JButton nextButton;
 
-        setLayout(new FlowLayout(FlowLayout.LEADING));
-
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS)); // Vertical layout
 
         // Incremental search:
         searchField = new JTextField(15);
         searchField.getDocument().addDocumentListener(getSearchAction());
 
+        // Panel for search field and label
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        searchPanel.add(new JLabel("Find:"));
+        searchPanel.add(searchField);
+
+        // Panel for buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
         // Find previous match:
         previousButton = new JButton("Previous", new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/prev.png"))));
         previousButton.addActionListener(getPreviousAction());
         initButton(previousButton);
-        setFocusable(true);
+
         // Find next match:
         nextButton = new JButton("Next", new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/next.png"))));
         nextButton.addActionListener(getNextAction());
         initButton(nextButton);
 
+        // Add buttons to their own row
+        buttonPanel.add(previousButton);
+        buttonPanel.add(Box.createHorizontalStrut(10));
+        buttonPanel.add(nextButton);
+
+        // Search result label
         searchResult = new JLabel();
 
-        initButton(previousButton);
-        add(Box.createHorizontalStrut(5));
-        add(new JLabel("Find:"));
-        add(searchField);
-        add(previousButton);
-        add(nextButton);
-        add(Box.createHorizontalStrut(10));
+        // Add components to the main panel
+        add(Box.createVerticalStrut(5));
+        add(searchPanel);
+        add(Box.createVerticalStrut(5));
+        add(buttonPanel);
+        add(Box.createVerticalStrut(10));
         add(searchResult);
-        bufferDiffPanel.getCaseSensitiveCheckBox().addActionListener(e->filePanel.doSearch());
+
+        bufferDiffPanel.getCaseSensitiveCheckBox().addActionListener(e -> filePanel.doSearch());
 
         timer = new Timer(500, executeSearch());
         timer.setRepeats(false);
     }
+
 
 
     private void initButton(AbstractButton button) {

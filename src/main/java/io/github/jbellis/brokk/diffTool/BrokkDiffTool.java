@@ -1,7 +1,4 @@
-
-
-        package io.github.jbellis.brokk.diffTool;
-
+package io.github.jbellis.brokk.diffTool;
 
 import io.github.jbellis.brokk.diffTool.ui.BrokkDiffPanel;
 import io.github.jbellis.brokk.diffTool.ui.JMHighlightPainter;
@@ -58,15 +55,24 @@ public class BrokkDiffTool
                 }
                 """.stripIndent();
 
+        var gplHacked = """
+                 Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+                 Everyone is permitted to copy and distribute verbatim copies
+                 of this license document, but changing it is not allowed.
+                
+                Jonathan's version is much better than Richard's.
+                """;
+
         JMHighlightPainter.initializePainters();
         JFrame frame = new JFrame("BrokkDiffTool");
         // Creating a new BrokkDiffPanel instance for file comparison mode.
         BrokkDiffPanel brokkPanel=new BrokkDiffPanel.Builder()
-//                .compareStrings(leftSource,"left-source",rightSource,"right-source")
+//                .compareStrings(leftSource,"left-source",gplHacked,"right-source")
                 //if you want to compare two files
-//                .compareFiles(new File("NOTICE.txt"),"left-source",new File("LICENSE.txt"),"right-source")
+                .compareFiles(new File("NOTICE.txt"),"left-source",new File("LICENSE.txt"),"right-source")
                 //if you want to compare a file and String
-                .compareStringAndFile(leftSource,"left-source",new File("LICENSE.txt"),"right-source")
+//                .compareStringAndFile(gplHacked, "left-source", new File("LICENSE.txt"), "right-source")
+//                .compareStringAndFileStringOnTheRight( new File("LICENSE.txt"), "right-source",gplHacked, "left-source")
                 .build();
         frame.add(brokkPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

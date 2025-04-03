@@ -43,6 +43,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
 
         addMouseListener(getMouseListener());
         addMouseMotionListener(getMouseMotionListener());
+        addMouseWheelListener(getMouseWheelListener());
         initSettings();
     }
 
@@ -110,56 +111,20 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         g2 = (Graphics2D) g;
 
         r = g.getClipBounds();
-        g2.setColor(getBackground());
+        g2.setColor(Color.white);
         g2.fill(r);
-        g2.setColor(Color.LIGHT_GRAY);
+        g2.setColor(Color.white);
 
         paintDiffs(g2);
     }
 
     private void paintDiffs(Graphics2D g2) {
-        JViewport viewportFrom;
-        JViewport viewportTo;
-        JTextComponent editorFrom;
-        JTextComponent editorTo;
-        JMRevision revision;
-        BufferDocumentIF bdFrom;
-        BufferDocumentIF bdTo;
-        int firstLineFrom;
-        int lastLineFrom;
-        int firstLineTo;
-        int lastLineTo;
-        int offset;
-        Rectangle r;
-        Point p;
-        JMChunk original;
-        JMChunk revised;
-        Rectangle viewportRect;
-        Rectangle fromRect;
-        Rectangle toRect;
-        int fromLine;
-        int toLine;
-        int x;
-        int y;
-        int width;
-        int height;
-        Rectangle bounds;
-        int x0;
-        int y0;
-        int x1;
-        int y1;
         Color color;
-        Color darkerColor;
-        Rectangle rect;
-        boolean selected;
-        int selectionWidth;
-        FilePanel fromPanel;
-        FilePanel toPanel;
 
-        bounds = g2.getClipBounds();
+        Rectangle bounds = g2.getClipBounds();
         g2.setClip(null);
 
-        revision = diffPanel.getCurrentRevision();
+        JMRevision revision = diffPanel.getCurrentRevision();
         if (revision == null) {
             return;
         }
@@ -170,32 +135,32 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         antiAlias = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 
         // From side:
-        fromPanel = getFromPanel();
-        viewportFrom = fromPanel.getScrollPane().getViewport();
-        editorFrom = fromPanel.getEditor();
-        bdFrom = fromPanel.getBufferDocument();
+        FilePanel fromPanel = getFromPanel();
+        JViewport viewportFrom = fromPanel.getScrollPane().getViewport();
+        JTextComponent editorFrom = fromPanel.getEditor();
+        BufferDocumentIF bdFrom = fromPanel.getBufferDocument();
         if (bdFrom == null) {
             return;
         }
 
-        r = viewportFrom.getViewRect();
+        Rectangle r = viewportFrom.getViewRect();
 
         // Calculate firstLine shown of the first document.
-        p = new Point(r.x, r.y);
-        offset = editorFrom.viewToModel2D(p);
-        firstLineFrom = bdFrom.getLineForOffset(offset) + 1;
+        Point p = new Point(r.x, r.y);
+        int offset = editorFrom.viewToModel2D(p);
+        int firstLineFrom = bdFrom.getLineForOffset(offset) + 1;
 
         // Calculate lastLine shown of the first document.
         p = new Point(r.x, r.y + r.height);
         offset = editorFrom.viewToModel2D(p);
         bdFrom = fromPanel.getBufferDocument();
-        lastLineFrom = bdFrom.getLineForOffset(offset) + 1;
+        int lastLineFrom = bdFrom.getLineForOffset(offset) + 1;
 
         // To side:
-        toPanel = getToPanel();
-        viewportTo = toPanel.getScrollPane().getViewport();
-        editorTo = toPanel.getEditor();
-        bdTo = toPanel.getBufferDocument();
+        FilePanel toPanel = getToPanel();
+        JViewport viewportTo = toPanel.getScrollPane().getViewport();
+        JTextComponent editorTo = toPanel.getEditor();
+        BufferDocumentIF bdTo = toPanel.getBufferDocument();
         if (bdTo == null) {
             return;
         }
@@ -205,18 +170,18 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         // Calculate firstLine shown of the second document.
         p = new Point(r.x, r.y);
         offset = editorTo.viewToModel2D(p);
-        firstLineTo = bdTo.getLineForOffset(offset) + 1;
+        int firstLineTo = bdTo.getLineForOffset(offset) + 1;
 
         // Calculate lastLine shown of the second document.
         p = new Point(r.x, r.y + r.height);
         offset = editorTo.viewToModel2D(p);
-        lastLineTo = bdTo.getLineForOffset(offset) + 1;
+        int lastLineTo = bdTo.getLineForOffset(offset) + 1;
 
         try {
             // Draw only the delta's that have some line's drawn in one of the viewports.
             for (JMDelta delta : revision.getDeltas()) {
-                original = delta.getOriginal();
-                revised = delta.getRevised();
+                JMChunk original = delta.getOriginal();
+                JMChunk revised = delta.getRevised();
 
                 // This delta is before the firstLine of the screen: Keep on searching!
                 if (original.getAnchor() + original.getSize() < firstLineFrom
@@ -230,10 +195,10 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                     break;
                 }
 
-                selected = (delta == diffPanel.getSelectedDelta());
+                boolean selected = (delta == diffPanel.getSelectedDelta());
 
                 // OK, this delta has some visible lines. Now draw it!
-                darkerColor = Color.gray;
+                Color darkerColor = Color.gray;
 
                 if (delta.isChange()) {
                     color = Colors.CHANGED;
@@ -246,26 +211,26 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                 g2.setColor(color);
 
                 // Draw original chunk:
-                fromLine = original.getAnchor();
-                toLine = original.getAnchor() + original.getSize();
-                viewportRect = viewportFrom.getViewRect();
+                int fromLine = original.getAnchor();
+                int toLine = original.getAnchor() + original.getSize();
+                Rectangle viewportRect = viewportFrom.getViewRect();
                 offset = bdFrom.getOffsetForLine(fromLine);
                 if (offset < 0) {
                     continue;
                 }
 
-                fromRect = editorFrom.modelToView(offset);
+                Rectangle fromRect = editorFrom.modelToView(offset);
                 offset = bdFrom.getOffsetForLine(toLine);
                 if (offset < 0) {
                     continue;
                 }
-                toRect = editorFrom.modelToView(offset);
+                Rectangle toRect = editorFrom.modelToView(offset);
 
-                x = 0;
-                y = fromRect.y - viewportRect.y + 1;
+                int x = 0;
+                int y = fromRect.y - viewportRect.y + 1;
                 y = Math.max(y, 0);
-                width = 10;
-                height = 0;
+                int width = 10;
+                int height = 0;
 
                 // start of diff is before the first visible line.
                 // end   of diff is before the last visible line.
@@ -299,8 +264,8 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                     height = viewportRect.height;
                 }
 
-                x0 = x + width;
-                y0 = y;
+                int x0 = x + width;
+                int y0 = y;
 
                 int curveX1 = x;
                 int curveY1 = y;
@@ -349,8 +314,8 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                     height = viewportRect.height;
                 }
 
-                x1 = x;
-                y1 = y;
+                int x1 = x;
+                int y1 = y;
 
                 if (isDrawCurves()) {
                     int curveX2 = x + width;
@@ -415,6 +380,8 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                     g2.drawLine(x1 - 15, y1, x1, y1);
                 }
 
+                int selectionWidth;
+
                 if (selected) {
                     if (heightSelFrom > 0) {
                         selectionWidth = 5;
@@ -440,7 +407,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                 }
                 Polygon shape;
                 // Draw merge left->right command.
-                if (bdTo.isReadonly() && diffPanel.getMainPanel().isTwoFilesComparison()) {
+                if (bdTo.isReadonly() && (diffPanel.getMainPanel().isTwoFilesComparison() || diffPanel.getMainPanel().isStringAndFileComparison())) {
                     if (!shift || original.getSize() > 0) {
 
                         shape = createTriangle(x1, y1,delta.isHovered() ? 2 : 1); // Scale 2x on hover
@@ -460,7 +427,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
                         g2.setColor(Color.RED);
                         g2.drawLine(x1 + 3, y1 + 3, x1 + 7, y1 + 7);
                         g2.drawLine(x1 + 7, y1 + 3, x1 + 3, y1 + 7);
-                        rect = new Rectangle(x1 + 2, y1 + 2, 6, 6);
+                        Rectangle rect = new Rectangle(x1 + 2, y1 + 2, 6, 6);
                         commands.add(new DiffDeleteCommand(rect, delta, toPanelIndex, fromPanelIndex));
                     }
                 }

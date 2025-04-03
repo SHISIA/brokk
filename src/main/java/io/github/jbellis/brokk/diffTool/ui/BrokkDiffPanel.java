@@ -88,6 +88,17 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
             return this;
         }
 
+
+        // Compare a string and a file
+        public Builder compareStringAndFileStringOnTheRight(File leftFile, String leftFileTitle, String contentRight, String contentRightTitle) {
+            this.contentRight = contentRight;
+            this.rightFileTitle = contentRightTitle;
+            this.leftFile = leftFile;
+            this.leftFileTitle = leftFileTitle;
+            this.isStringAndFileComparison = true;
+            return this;
+        }
+
         // Compare two strings
         public Builder compareStrings(String contentLeft, String contentLeftTitle, String contentRight, String contentRightTitle) {
             this.contentLeft = contentLeft;
@@ -141,10 +152,6 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         btnUndo = new JButton("Undo");
         btnRedo = new JButton("Redo");
 
-        btnUndo.addActionListener(e -> getCurrentContentPanel().doUndo());
-
-        btnRedo.addActionListener(e -> getCurrentContentPanel().doRedo());
-
         btnNext.addActionListener(e -> {
             getCurrentContentPanel().doDown();
             repaint();
@@ -155,9 +162,11 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         });
         btnUndo.addActionListener(e -> {
             getCurrentContentPanel().doUndo();
-        });
+            repaint();
+        }); 
         btnRedo.addActionListener(e -> {
             getCurrentContentPanel().doRedo();
+            repaint();
         });
         // Add buttons to toolbar with spacing
         toolBar.add(btnPrevious);
@@ -196,6 +205,7 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
                 .withComparisonType(isTwoFilesComparison, isStringAndFileComparison)
                 .withFiles(leftFile, leftFileTitle, rightFile, rightFileTitle)
                 .withStringAndFile(contentLeft, leftFileTitle, rightFile, rightFileTitle)
+                .withStringAndFile(leftFile,leftFileTitle,contentRight,rightFileTitle)
                 .withStrings(contentLeft, leftFileTitle, contentRight, rightFileTitle)
                 .build();
 

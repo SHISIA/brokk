@@ -59,12 +59,8 @@ public class RevisionBar
         JMChunk original;
 
         r = getDrawableRectangle();
-        if (r == null)
-        {
-          return;
-        }
 
-        if (r.height <= 0)
+          if (r.height <= 0)
         {
           return;
         }

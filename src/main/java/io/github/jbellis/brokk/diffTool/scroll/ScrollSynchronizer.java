@@ -178,7 +178,7 @@ public class ScrollSynchronizer
   public void showDelta(JMDelta delta)
   {
     scrollToLine(filePanelLeft, delta.getOriginal().getAnchor());
-    scroll(true);
+    scroll(false);
   }
 
   private int getCurrentLineCenter(FilePanel fp)
@@ -274,7 +274,11 @@ public class ScrollSynchronizer
       p.x = viewRect.x;
 
       viewport.setViewPosition(p);
+
+
     }
+    
+    
     catch (Exception ex)
     {
       ex.printStackTrace();

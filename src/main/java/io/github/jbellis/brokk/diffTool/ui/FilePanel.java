@@ -220,6 +220,9 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
                 PlainDocument document = bufferDocument.getDocument();
                 int endOffset = toOffset - 1;
                 boolean changeReachEnd = endOffset == document.getLength();
+                if (endOffset < 0 || endOffset >= document.getLength()) {
+                    return false;
+                }
                 boolean lastCharIsNewLine = "\n".equals(document.getText(endOffset, 1));
                 isEndAndIsLastNewLine = changeReachEnd && lastCharIsNewLine;
             } catch (BadLocationException e) {
@@ -227,6 +230,7 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
             }
             return isEndAndIsLastNewLine;
         }
+
 
         private JMChunk getPrimaryChunk() {
             return getPrimaryChunk(delta);
