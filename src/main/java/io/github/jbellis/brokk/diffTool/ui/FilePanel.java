@@ -317,6 +317,10 @@ public class FilePanel implements BufferDocumentChangeListenerIF {
         }
     }
 
+    boolean isDocumentChanged() {
+        return bufferDocument != null && bufferDocument.isChanged();
+    }
+
     public ActionListener getSaveButtonAction() {
         return ae -> {
             try {

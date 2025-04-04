@@ -424,12 +424,10 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
 
                     // Draw delete right command
                     if (revised.getSize() > 0 && !shift) {
-                        g2.setColor(Color.RED);
-                        g2.drawLine(x1 + 3, y1 + 3, x1 + 7, y1 + 7);
-                        g2.drawLine(x1 + 7, y1 + 3, x1 + 3, y1 + 7);
                         Rectangle rect = new Rectangle(x1 + 2, y1 + 2, 6, 6);
                         commands.add(new DiffDeleteCommand(rect, delta, toPanelIndex, fromPanelIndex));
                     }
+
                 }
 
             }
@@ -499,6 +497,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
         public void execute() {
             diffPanel.setSelectedDelta(delta);
             diffPanel.runChange(fromIndex, toIndex, shift);
+            diffPanel.doSave();
         }
     }
 
@@ -514,6 +513,7 @@ public class DiffScrollComponent extends JComponent implements ChangeListener {
             if (!shift) {
                 diffPanel.runDelete(fromIndex, toIndex);
             }
+            diffPanel.doSave();
         }
     }
 

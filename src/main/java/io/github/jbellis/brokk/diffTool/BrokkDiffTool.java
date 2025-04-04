@@ -67,11 +67,12 @@ public class BrokkDiffTool
         JFrame frame = new JFrame("BrokkDiffTool");
         // Creating a new BrokkDiffPanel instance for file comparison mode.
         BrokkDiffPanel brokkPanel=new BrokkDiffPanel.Builder()
-//                .compareStrings(leftSource,"left-source",gplHacked,"right-source")
+                .compareStrings(leftSource,"left-source",gplHacked,"right-source")
                 //if you want to compare two files
-                .compareFiles(new File("NOTICE.txt"),"left-source",new File("LICENSE.txt"),"right-source")
+//                .compareFiles(new File("NOTICE.txt"),"left-source",new File("LICENSE.txt"),"right-source")
                 //if you want to compare a file and String
 //                .compareStringAndFile(gplHacked, "left-source", new File("LICENSE.txt"), "right-source")
+                //if you want to compare a string  and a file, and you prefer the file to be on the let side
 //                .compareStringAndFileStringOnTheRight( new File("LICENSE.txt"), "right-source",gplHacked, "left-source")
                 .build();
         frame.add(brokkPanel);

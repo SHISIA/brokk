@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -141,6 +142,15 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
     }
 
     private JButton btnRedo;
+    private BufferDiffPanel bufferDiffPanel;
+
+    public void setBufferDiffPanel(BufferDiffPanel bufferDiffPanel) {
+        this.bufferDiffPanel = bufferDiffPanel;
+    }
+
+    private BufferDiffPanel getBufferDiffPanel() {
+        return bufferDiffPanel;
+    }
 
     private JToolBar createToolbar() {
         // Create toolbar
@@ -163,10 +173,12 @@ public class BrokkDiffPanel extends JPanel implements PropertyChangeListener {
         btnUndo.addActionListener(e -> {
             getCurrentContentPanel().doUndo();
             repaint();
-        }); 
+            getBufferDiffPanel().doSave();
+        });
         btnRedo.addActionListener(e -> {
             getCurrentContentPanel().doRedo();
             repaint();
+            getBufferDiffPanel().doSave();
         });
         // Add buttons to toolbar with spacing
         toolBar.add(btnPrevious);

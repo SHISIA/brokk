@@ -21,6 +21,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +33,11 @@ public class BufferDiffPanel extends AbstractContentPanel {
 
 
     private final BrokkDiffPanel mainPanel;
+
+    public FilePanel[] getFilePanels() {
+        return filePanels;
+    }
+
     private FilePanel[] filePanels;
     private JMDiffNode diffNode;
     private JMRevision currentRevision;
@@ -68,6 +74,7 @@ public class BufferDiffPanel extends AbstractContentPanel {
     
     public BufferDiffPanel(BrokkDiffPanel mainPanel) {
         this.mainPanel = mainPanel;
+        mainPanel.setBufferDiffPanel(this);
         diff = new JMDiff();
 
         init();
@@ -253,10 +260,23 @@ public class BufferDiffPanel extends AbstractContentPanel {
         leftPanel.add(Box.createHorizontalStrut(5)); // Add space between checkbox and left bar
         leftPanel.add(leftBar);
 
+        JPanel leftMostPanelUp =new JPanel(new FlowLayout(FlowLayout.LEADING));
+        leftMostPanelUp.add(caseSensitiveCheckBox);
+
+        JPanel leftMostPanelDown =new JPanel(new FlowLayout(FlowLayout.CENTER));
+        leftMostPanelDown.add(new JLabel(""));
+
+        JPanel leftMostPane=new JPanel();
+        leftMostPane.setLayout(new BoxLayout(leftMostPane, BoxLayout.Y_AXIS));
+        leftMostPane.add(leftMostPanelUp);
+        leftMostPane.add(leftMostPanelDown);
+        leftMostPane.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         rightPanel.add(rightBar);
+        
         rightPanel.add(Box.createHorizontalStrut(5)); // Add space between checkbox and left bar
-        barContainer.add(caseSensitiveCheckBox, BorderLayout.WEST);
+        barContainer.add(leftMostPane, BorderLayout.WEST);
         barContainer.add(leftPanel,BorderLayout.CENTER);
         barContainer.add(rightPanel, BorderLayout.EAST);
         
@@ -446,15 +466,6 @@ public class BufferDiffPanel extends AbstractContentPanel {
         }
     }
 
-    private FilePanel getSelectedPanel() {
-        if (filePanelSelectedIndex >= 0
-                && filePanelSelectedIndex < filePanels.length) {
-            return filePanels[filePanelSelectedIndex];
-        }
-
-        return null;
-    }
-
     void setSelectedPanel(FilePanel fp) {
         int index;
 
@@ -474,6 +485,32 @@ public class BufferDiffPanel extends AbstractContentPanel {
 
             if (filePanelSelectedIndex != -1) {
                 filePanels[filePanelSelectedIndex].setSelected(true);
+            }
+        }
+    }
+
+
+    public void doSave() {
+        BufferDocumentIF document;
+
+        for (FilePanel filePanel : filePanels) {
+            if (filePanel == null) {
+                continue;
+            }
+
+            if (!filePanel.isDocumentChanged()) {
+                continue;
+            }
+
+            document = filePanel.getBufferDocument();
+
+            try {
+                document.write();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(mainPanel, "Can't save file"
+                                + document.getName(),
+                        "Problem writing file", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
